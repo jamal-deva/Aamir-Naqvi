@@ -64,11 +64,16 @@ function VideoPlayer({ src, title, isShowreel = false }: VideoPlayerProps) {
         ref={containerRef}
         className={`relative group cursor-pointer aspect-video rounded-xl overflow-hidden shadow-lg transition-all duration-300 ${
           isFullscreen 
-            ? 'fixed inset-0 z-[9999] !rounded-none !aspect-auto w-screen h-screen' 
+            ? 'fixed inset-0 z-[9999] flex items-center justify-center' 
             : 'hover:shadow-xl hover:scale-105'
         }`}
         onClick={handleVideoClick}
       >
+        {/* Fullscreen backdrop with blur and overlay */}
+        {isFullscreen && (
+          <div className="absolute inset-0 bg-black/45 backdrop-blur-md transition-all duration-500" />
+        )}
+        
         <video
           ref={videoRef}
           src={src}
@@ -76,8 +81,10 @@ function VideoPlayer({ src, title, isShowreel = false }: VideoPlayerProps) {
           muted={false}
           loop
           playsInline
-          className={`w-full h-full object-contain transition-opacity duration-300 ${showThumbnail ? 'opacity-0' : 'opacity-100'} ${
-            isFullscreen ? 'object-contain' : 'object-cover'
+          className={`transition-all duration-500 ${showThumbnail ? 'opacity-0' : 'opacity-100'} ${
+            isFullscreen 
+              ? 'w-[90vw] h-[90vh] object-contain rounded-2xl relative z-10' 
+              : 'w-full h-full object-cover'
           }`}
           onLoadedData={() => {
             if (videoRef.current) {
@@ -88,7 +95,7 @@ function VideoPlayer({ src, title, isShowreel = false }: VideoPlayerProps) {
         
         {/* Thumbnail overlay */}
         {showThumbnail && (
-          <div className="absolute inset-0">
+          <div className={`absolute ${isFullscreen ? 'inset-0 flex items-center justify-center' : 'inset-0'}`}>
             <canvas
               ref={(canvas) => {
                 if (canvas && videoRef.current) {
@@ -113,13 +120,19 @@ function VideoPlayer({ src, title, isShowreel = false }: VideoPlayerProps) {
                   }
                 }
               }}
-              className={`w-full h-full ${isFullscreen ? 'object-contain' : 'object-cover'}`}
+              className={`transition-all duration-500 ${
+                isFullscreen 
+                  ? 'w-[90vw] h-[90vh] object-contain rounded-2xl relative z-10' 
+                  : 'w-full h-full object-cover'
+              }`}
             />
           </div>
         )}
         
         {!isPlaying && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+          <div className={`absolute flex items-center justify-center bg-black/30 ${
+            isFullscreen ? 'inset-0' : 'inset-0'
+          }`}>
             <div className={`bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm ${
               isFullscreen ? 'w-24 h-24' : 'w-16 h-16'
             }`}>
@@ -132,7 +145,7 @@ function VideoPlayer({ src, title, isShowreel = false }: VideoPlayerProps) {
           </div>
         )}
         {!isFullscreen && (
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300" />
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-500" />
         )}
         <button
           onClick={(e) => {
@@ -141,7 +154,7 @@ function VideoPlayer({ src, title, isShowreel = false }: VideoPlayerProps) {
           }}
           className={`absolute bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-all duration-300 z-10 ${
             isFullscreen 
-              ? 'top-8 right-8 w-12 h-12 opacity-100' 
+              ? 'top-[5vh] right-[5vw] w-12 h-12 opacity-100' 
               : 'top-4 right-4 w-10 h-10 opacity-0 group-hover:opacity-100'
           }`}
         >
@@ -153,7 +166,7 @@ function VideoPlayer({ src, title, isShowreel = false }: VideoPlayerProps) {
         </button>
         <div className={`absolute transition-all duration-300 ${
           isFullscreen 
-            ? 'bottom-8 left-8 opacity-100' 
+            ? 'bottom-[5vh] left-[5vw] opacity-100' 
             : 'bottom-4 left-4 opacity-0 group-hover:opacity-100'
         }`}>
           <span className={`text-white font-bosenAlt bg-black/50 px-3 py-1 rounded-full ${
@@ -173,11 +186,16 @@ function VideoPlayer({ src, title, isShowreel = false }: VideoPlayerProps) {
       ref={containerRef}
       className={`relative group cursor-pointer aspect-video rounded-xl overflow-hidden shadow-lg transition-all duration-300 ${
         isFullscreen 
-          ? 'fixed inset-0 z-[9999] !rounded-none !aspect-auto w-screen h-screen' 
+          ? 'fixed inset-0 z-[9999] flex items-center justify-center' 
           : 'hover:shadow-xl hover:scale-105'
       }`}
       onClick={handleVideoClick}
     >
+      {/* Fullscreen backdrop with blur and overlay */}
+      {isFullscreen && (
+        <div className="absolute inset-0 bg-black/45 backdrop-blur-md transition-all duration-500" />
+      )}
+      
       <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className={`mx-auto mb-3 bg-white/10 rounded-full flex items-center justify-center ${
@@ -193,7 +211,7 @@ function VideoPlayer({ src, title, isShowreel = false }: VideoPlayerProps) {
         </div>
       </div>
       {!isFullscreen && (
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300"></div>
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-500"></div>
       )}
       <button
         onClick={(e) => {
@@ -202,7 +220,7 @@ function VideoPlayer({ src, title, isShowreel = false }: VideoPlayerProps) {
         }}
         className={`absolute bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-all duration-300 z-10 ${
           isFullscreen 
-            ? 'top-8 right-8 w-12 h-12 opacity-100' 
+            ? 'top-[5vh] right-[5vw] w-12 h-12 opacity-100' 
             : 'top-4 right-4 w-10 h-10 opacity-0 group-hover:opacity-100'
         }`}
       >
@@ -263,11 +281,16 @@ function VerticalVideoPlayer({ title }: { title: string }) {
       ref={containerRef}
       className={`relative group cursor-pointer aspect-[9/16] rounded-lg overflow-hidden shadow-lg transition-all duration-300 ${
         isFullscreen 
-          ? 'fixed inset-0 z-[9999] !rounded-none !aspect-auto w-screen h-screen' 
+          ? 'fixed inset-0 z-[9999] flex items-center justify-center' 
           : 'hover:shadow-xl hover:scale-105'
       }`}
       onClick={handleVideoClick}
     >
+      {/* Fullscreen backdrop with blur and overlay */}
+      {isFullscreen && (
+        <div className="absolute inset-0 bg-black/45 backdrop-blur-md transition-all duration-500" />
+      )}
+      
       {/* Video element (hidden initially) */}
       <video
         ref={videoRef}
@@ -275,8 +298,10 @@ function VerticalVideoPlayer({ title }: { title: string }) {
         muted={false}
         loop
         playsInline
-        className={`w-full h-full transition-opacity duration-300 ${showThumbnail ? 'opacity-0' : 'opacity-100'} ${
-          isFullscreen ? 'object-contain' : 'object-cover'
+        className={`transition-all duration-500 ${showThumbnail ? 'opacity-0' : 'opacity-100'} ${
+          isFullscreen 
+            ? 'w-[90vw] h-[90vh] object-contain rounded-2xl relative z-10' 
+            : 'w-full h-full object-cover'
         }`}
         onLoadedData={() => {
           if (videoRef.current) {
@@ -287,7 +312,7 @@ function VerticalVideoPlayer({ title }: { title: string }) {
       
       {/* Thumbnail overlay */}
       {showThumbnail && (
-        <div className="absolute inset-0">
+        <div className={`absolute ${isFullscreen ? 'inset-0 flex items-center justify-center' : 'inset-0'}`}>
           <canvas
             ref={(canvas) => {
               if (canvas && videoRef.current) {
@@ -312,7 +337,11 @@ function VerticalVideoPlayer({ title }: { title: string }) {
                 }
               }
             }}
-            className={`w-full h-full ${isFullscreen ? 'object-contain' : 'object-cover'}`}
+            className={`transition-all duration-500 ${
+              isFullscreen 
+                ? 'w-[90vw] h-[90vh] object-contain rounded-2xl relative z-10' 
+                : 'w-full h-full object-cover'
+            }`}
           />
         </div>
       )}
@@ -337,7 +366,9 @@ function VerticalVideoPlayer({ title }: { title: string }) {
       
       {/* Play button overlay */}
       {!isPlaying && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/30 ">
+        <div className={`absolute flex items-center justify-center bg-black/30 ${
+          isFullscreen ? 'inset-0' : 'inset-0'
+        }`}>
           <div className={`bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm ${
             isFullscreen ? 'w-20 h-20' : 'w-12 h-12'
           }`}>
@@ -351,7 +382,7 @@ function VerticalVideoPlayer({ title }: { title: string }) {
       )}
       
       {!isFullscreen && (
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300"></div>
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-500"></div>
       )}
       <button
         onClick={(e) => {
@@ -360,7 +391,7 @@ function VerticalVideoPlayer({ title }: { title: string }) {
         }}
         className={`absolute bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-all duration-300 z-10 ${
           isFullscreen 
-            ? 'top-8 right-8 w-12 h-12 opacity-100' 
+            ? 'top-[5vh] right-[5vw] w-12 h-12 opacity-100' 
             : 'top-2 right-2 w-8 h-8 opacity-0 group-hover:opacity-100'
         }`}
       >
@@ -372,7 +403,7 @@ function VerticalVideoPlayer({ title }: { title: string }) {
       </button>
       <div className={`absolute transition-all duration-300 ${
         isFullscreen 
-          ? 'bottom-8 left-8 opacity-100' 
+          ? 'bottom-[5vh] left-[5vw] opacity-100' 
           : 'bottom-2 left-2 opacity-0 group-hover:opacity-100'
       }`}>
         <span className={`text-white font-bosenAlt bg-black/50 px-2 py-1 rounded-full ${
@@ -432,11 +463,16 @@ function VerticalVideoPlayerWithSrc({ src, title }: { src: string; title: string
       ref={containerRef}
       className={`relative group cursor-pointer aspect-[9/16] rounded-lg overflow-hidden shadow-lg transition-all duration-300 ${
         isFullscreen 
-          ? 'fixed inset-0 z-[9999] !rounded-none !aspect-auto w-screen h-screen' 
+          ? 'fixed inset-0 z-[9999] flex items-center justify-center' 
           : 'hover:shadow-xl hover:scale-105'
       }`}
       onClick={handleVideoClick}
     >
+      {/* Fullscreen backdrop with blur and overlay */}
+      {isFullscreen && (
+        <div className="absolute inset-0 bg-black/45 backdrop-blur-md transition-all duration-500" />
+      )}
+      
       <video
         ref={videoRef}
         src={src}
@@ -444,8 +480,10 @@ function VerticalVideoPlayerWithSrc({ src, title }: { src: string; title: string
         muted={false}
         loop
         playsInline
-        className={`w-full h-full transition-opacity duration-300 ${showThumbnail ? 'opacity-0' : 'opacity-100'} ${
-          isFullscreen ? 'object-contain' : 'object-cover'
+        className={`transition-all duration-500 ${showThumbnail ? 'opacity-0' : 'opacity-100'} ${
+          isFullscreen 
+            ? 'w-[90vw] h-[90vh] object-contain rounded-2xl relative z-10' 
+            : 'w-full h-full object-cover'
         }`}
         onLoadedData={() => {
           if (videoRef.current) {
@@ -456,7 +494,7 @@ function VerticalVideoPlayerWithSrc({ src, title }: { src: string; title: string
       
       {/* Thumbnail overlay */}
       {showThumbnail && (
-        <div className="absolute inset-0">
+        <div className={`absolute ${isFullscreen ? 'inset-0 flex items-center justify-center' : 'inset-0'}`}>
           <canvas
             ref={(canvas) => {
               if (canvas && videoRef.current) {
@@ -481,14 +519,20 @@ function VerticalVideoPlayerWithSrc({ src, title }: { src: string; title: string
                 }
               }
             }}
-            className={`w-full h-full ${isFullscreen ? 'object-contain' : 'object-cover'}`}
+            className={`transition-all duration-500 ${
+              isFullscreen 
+                ? 'w-[90vw] h-[90vh] object-contain rounded-2xl relative z-10' 
+                : 'w-full h-full object-cover'
+            }`}
           />
         </div>
       )}
       
       {/* Play button overlay */}
       {!isPlaying && ( 
-        <div className="absolute inset-0 flex items-center justify-center bg-black/30 ">
+        <div className={`absolute flex items-center justify-center bg-black/30 ${
+          isFullscreen ? 'inset-0' : 'inset-0'
+        }`}>
           <div className={`bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm ${
             isFullscreen ? 'w-20 h-20' : 'w-12 h-12'
           }`}>
@@ -503,7 +547,7 @@ function VerticalVideoPlayerWithSrc({ src, title }: { src: string; title: string
       )}
       
       {!isFullscreen && (
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300"></div>
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-500"></div>
       )}
       <button
         onClick={(e) => {
@@ -512,7 +556,7 @@ function VerticalVideoPlayerWithSrc({ src, title }: { src: string; title: string
         }}
         className={`absolute bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-all duration-300 z-10 ${
           isFullscreen 
-            ? 'top-8 right-8 w-12 h-12 opacity-100' 
+            ? 'top-[5vh] right-[5vw] w-12 h-12 opacity-100' 
             : 'top-2 right-2 w-8 h-8 opacity-0 group-hover:opacity-100'
         }`}
       >
@@ -524,7 +568,7 @@ function VerticalVideoPlayerWithSrc({ src, title }: { src: string; title: string
       </button>
       <div className={`absolute transition-all duration-300 ${
         isFullscreen 
-          ? 'bottom-8 left-8 opacity-100' 
+          ? 'bottom-[5vh] left-[5vw] opacity-100' 
           : 'bottom-2 left-2 opacity-0 group-hover:opacity-100'
       }`}>
         <span className={`text-white font-bosenAlt bg-black/50 px-2 py-1 rounded-full ${
@@ -567,10 +611,15 @@ function VerticalVideoPlayerPlaceholder({ title }: { title: string }) {
       ref={containerRef}
       className={`relative group cursor-pointer aspect-[9/16] rounded-lg overflow-hidden shadow-lg transition-all duration-300 ${
         isFullscreen 
-          ? 'fixed inset-0 z-[9999] !rounded-none !aspect-auto w-screen h-screen' 
+          ? 'fixed inset-0 z-[9999] flex items-center justify-center' 
           : 'hover:shadow-xl hover:scale-105'
       }`}
     >
+      {/* Fullscreen backdrop with blur and overlay */}
+      {isFullscreen && (
+        <div className="absolute inset-0 bg-black/45 backdrop-blur-md transition-all duration-500" />
+      )}
+      
       <div className="w-full h-full bg-gradient-to-b from-gray-700 to-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className={`mx-auto mb-2 bg-white/10 rounded-full flex items-center justify-center ${
@@ -586,7 +635,7 @@ function VerticalVideoPlayerPlaceholder({ title }: { title: string }) {
         </div>
       </div>
       {!isFullscreen && (
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300"></div>
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-500"></div>
       )}
       <button
         onClick={(e) => {
@@ -595,7 +644,7 @@ function VerticalVideoPlayerPlaceholder({ title }: { title: string }) {
         }}
         className={`absolute bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-all duration-300 z-10 ${
           isFullscreen 
-            ? 'top-8 right-8 w-12 h-12 opacity-100' 
+            ? 'top-[5vh] right-[5vw] w-12 h-12 opacity-100' 
             : 'top-2 right-2 w-8 h-8 opacity-0 group-hover:opacity-100'
         }`}
       >
@@ -607,7 +656,7 @@ function VerticalVideoPlayerPlaceholder({ title }: { title: string }) {
       </button>
       <div className={`absolute transition-all duration-300 ${
         isFullscreen 
-          ? 'bottom-8 left-8 opacity-100' 
+          ? 'bottom-[5vh] left-[5vw] opacity-100' 
           : 'bottom-2 left-2 opacity-0 group-hover:opacity-100'
       }`}>
         <span className={`text-white font-bosenAlt bg-black/50 px-2 py-1 rounded-full ${
