@@ -16,7 +16,7 @@ interface VideoPlayerProps {
 }
 
 function VideoPlayer({ src, title, isShowreel = false }: VideoPlayerProps) {
-  const [isCinemaMode, setIsCinemaMode] = React.useState(false);
+  const [isFullscreen, setIsFullscreen] = React.useState(false);
   const [isPlaying, setIsPlaying] = React.useState(false);
   const [showThumbnail, setShowThumbnail] = React.useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -24,7 +24,6 @@ function VideoPlayer({ src, title, isShowreel = false }: VideoPlayerProps) {
 
 
   const handleVideoClick = () => {
-    if (isCinemaMode) return; // Prevent video controls when in cinema mode
     if (videoRef.current) {
       if (isPlaying) {
         videoRef.current.pause();
@@ -38,447 +37,36 @@ function VideoPlayer({ src, title, isShowreel = false }: VideoPlayerProps) {
     }
   };
 
-  const toggleCinemaMode = () => {
-    setIsCinemaMode(!isCinemaMode);
-  };
-
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      setIsCinemaMode(false);
+  const toggleFullscreen = () => {
+    if (!isFullscreen) {
+      if (containerRef.current?.requestFullscreen) {
+        containerRef.current.requestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
     }
   };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
 
   if (src) {
     return (
-      <>
-        {/* Cinema Mode Overlay */}
-        {isCinemaMode && (
-          <div 
-            className="fixed inset-0 z-[9999] bg-black/45 backdrop-blur-md transition-all duration-500 flex items-center justify-center"
-            onClick={handleOverlayClick}
-          >
-            <div 
-              className="relative w-[70vw] h-[70vh] rounded-2xl overflow-hidden shadow-2xl transition-all duration-500"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <video
-                ref={videoRef}
-                src={src}
-                autoPlay={false}
-                muted={false}
-                loop
-                playsInline
-                className="w-full h-full object-contain"
-                onLoadedData={() => {
-                  if (videoRef.current) {
-                    videoRef.current.currentTime = 1;
-                  }
-                }}
-              />
-              
-              {/* Cinema Mode Close Button */}
-              <button
-                onClick={() => setIsCinemaMode(false)}
-                className="absolute top-4 right-4 w-12 h-12 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-all duration-300 z-10"
-              >
-                <X size={20} className="text-white" />
-              </button>
-              
-              {/* Cinema Mode Title */}
-              <div className="absolute bottom-4 left-4">
-                <span className="text-white font-bosenAlt bg-black/50 px-3 py-1 rounded-full text-lg">
-                  {title}
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* Original Video Container */}
-        <div 
-          ref={containerRef}
-          className="relative group cursor-pointer aspect-video rounded-xl overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105"
-          onClick={handleVideoClick}
-        >
-          <video
-            ref={videoRef}
-            src={src}
-            autoPlay={false}
-            muted={false}
-            loop
-            playsInline
-            className={`transition-all duration-500 w-full h-full object-cover ${showThumbnail ? 'opacity-0' : 'opacity-100'}`}
-            onLoadedData={() => {
-              if (videoRef.current) {
-                videoRef.current.currentTime = 1;
-              }
-            }}
-          />
-          
-          {/* Thumbnail overlay */}
-          {showThumbnail && (
-            <div className="absolute inset-0">
-              <canvas
-                ref={(canvas) => {
-                  if (canvas && videoRef.current) {
-                    const video = videoRef.current;
-                    const ctx = canvas.getContext('2d');
-                    if (ctx) {
-                      canvas.width = video.videoWidth || 1920;
-                      canvas.height = video.videoHeight || 1080;
-                      
-                      const drawThumbnail = () => {
-                        if (video.readyState >= 2) {
-                          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                        }
-                      };
-                      
-                      video.addEventListener('loadeddata', drawThumbnail);
-                      video.addEventListener('seeked', drawThumbnail);
-                      
-                      if (video.readyState >= 2) {
-                        drawThumbnail();
-                      }
-                    }
-                  }
-                }}
-                className="w-full h-full object-cover transition-all duration-500"
-              />
-            </div>
-          )}
-          
-          {!isPlaying && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-              <div className="bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm w-16 h-16">
-                <div className="w-0 h-0 border-l-white border-t-transparent border-b-transparent ml-1 border-l-[20px] border-t-[12px] border-b-[12px] animate-bounce-triangle"></div>
-              </div>
-            </div>
-          )}
-          
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-500" />
-          
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleCinemaMode();
-            }}
-            className="absolute top-4 right-4 w-10 h-10 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-all duration-300 z-10 opacity-0 group-hover:opacity-100"
-          >
-            <Maximize2 size={16} className="text-white" />
-          </button>
-          
-          <div className="absolute bottom-4 left-4 opacity-0 group-hover:opacity-100 transition-all duration-300">
-            <span className="text-white font-bosenAlt bg-black/50 px-3 py-1 rounded-full text-sm">
-              {title}
-            </span>
-          </div>
-        </div>
-      </>
-    );
-  }
-
-
-  // Placeholder for videos without src
-  return (
-    <>
-      {/* Cinema Mode Overlay */}
-      {isCinemaMode && (
-        <div 
-          className="fixed inset-0 z-[9999] bg-black/45 backdrop-blur-md transition-all duration-500 flex items-center justify-center"
-          onClick={handleOverlayClick}
-        >
-          <div 
-            className="relative w-[70vw] h-[70vh] rounded-2xl overflow-hidden shadow-2xl transition-all duration-500 bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="text-center">
-              <div className="mx-auto mb-3 bg-white/10 rounded-full flex items-center justify-center w-24 h-24">
-                <div className="w-0 h-0 border-l-white border-t-transparent border-b-transparent ml-1 border-l-[20px] border-t-[12px] border-b-[12px]"></div>
-              </div>
-              <span className="text-white/60 font-bosenAlt text-xl">{title}</span>
-            </div>
-            
-            {/* Cinema Mode Close Button */}
-            <button
-              onClick={() => setIsCinemaMode(false)}
-              className="absolute top-4 right-4 w-12 h-12 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-all duration-300 z-10"
-            >
-              <X size={20} className="text-white" />
-            </button>
-          </div>
-        </div>
-      )}
-      
-      {/* Original Video Container */}
       <div 
         ref={containerRef}
-        className="relative group cursor-pointer aspect-video rounded-xl overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105"
-        onClick={handleVideoClick}
-      >
-        <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center">
-          <div className="text-center">
-            <div className="mx-auto mb-3 bg-white/10 rounded-full flex items-center justify-center w-12 h-12">
-              <div className="w-0 h-0 border-l-white border-t-transparent border-b-transparent ml-1 border-l-[10px] border-t-[6px] border-b-[6px]"></div>
-            </div>
-            <span className="text-white/60 font-bosenAlt text-sm">{title}</span>
-          </div>
-        </div>
-        
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-500"></div>
-        
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleCinemaMode();
-          }}
-          className="absolute top-4 right-4 w-10 h-10 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-all duration-300 z-10 opacity-0 group-hover:opacity-100"
-        >
-          <Maximize2 size={16} className="text-white" />
-        </button>
-      </div>
-    </>
-  );
-}
-
-function VerticalVideoPlayer({ title }: { title: string }) {
-  const [isCinemaMode, setIsCinemaMode] = React.useState(false);
-  const [isPlaying, setIsPlaying] = React.useState(false);
-  const [showThumbnail, setShowThumbnail] = React.useState(true);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const handleVideoClick = () => {
-    if (isCinemaMode) return;
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-        setIsPlaying(false);
-        setShowThumbnail(true);
-      } else {
-        videoRef.current.play();
-        setIsPlaying(true);
-        setShowThumbnail(false);
-      }
-    }
-  };
-
-  const toggleCinemaMode = () => {
-    setIsCinemaMode(!isCinemaMode);
-  };
-
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      setIsCinemaMode(false);
-    }
-  };
-
-  return (
-    <>
-      {/* Cinema Mode Overlay */}
-      {isCinemaMode && (
-        <div 
-          className="fixed inset-0 z-[9999] bg-black/45 backdrop-blur-md transition-all duration-500 flex items-center justify-center"
-          onClick={handleOverlayClick}
-        >
-          <div 
-            className="relative w-[70vw] h-[70vh] rounded-2xl overflow-hidden shadow-2xl transition-all duration-500 bg-gradient-to-b from-gray-700 to-gray-900 flex items-center justify-center"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="text-center">
-              <div className="mx-auto mb-2 bg-white/10 rounded-full flex items-center justify-center w-16 h-16">
-                <div className="w-0 h-0 border-l-white border-t-transparent border-b-transparent ml-0.5 border-l-[16px] border-t-[8px] border-b-[8px]"></div>
-              </div>
-              <span className="text-white/60 font-bosenAlt text-lg">{title}</span>
-            </div>
-            
-            {/* Cinema Mode Close Button */}
-            <button
-              onClick={() => setIsCinemaMode(false)}
-              className="absolute top-4 right-4 w-12 h-12 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-all duration-300 z-10"
-            >
-              <X size={20} className="text-white" />
-            </button>
-          </div>
-        </div>
-      )}
-      
-      {/* Original Video Container */}
-      <div 
-        ref={containerRef}
-        className="relative group cursor-pointer aspect-[9/16] rounded-lg overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105"
-        onClick={handleVideoClick}
-      >
-        {/* Video element (hidden initially) */}
-        <video
-          ref={videoRef}
-          autoPlay={false}
-          muted={false}
-          loop
-          playsInline
-          className={`transition-all duration-500 w-full h-full object-cover ${showThumbnail ? 'opacity-0' : 'opacity-100'}`}
-          onLoadedData={() => {
-            if (videoRef.current) {
-              videoRef.current.currentTime = 1;
-            }
-          }}
-        />
-        
-        {/* Thumbnail overlay */}
-        {showThumbnail && (
-          <div className="absolute inset-0">
-            <canvas
-              ref={(canvas) => {
-                if (canvas && videoRef.current) {
-                  const video = videoRef.current;
-                  const ctx = canvas.getContext('2d');
-                  if (ctx) {
-                    canvas.width = video.videoWidth || 1080;
-                    canvas.height = video.videoHeight || 1920;
-                    
-                    const drawThumbnail = () => {
-                      if (video.readyState >= 2) {
-                        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                      }
-                    };
-                    
-                    video.addEventListener('loadeddata', drawThumbnail);
-                    video.addEventListener('seeked', drawThumbnail);
-                    
-                    if (video.readyState >= 2) {
-                      drawThumbnail();
-                    }
-                  }
-                }
-              }}
-              className="w-full h-full object-cover transition-all duration-500"
-            />
-          </div>
-        )}
-        
-        {/* Fallback placeholder when no video */}
-        {!videoRef.current?.src && (
-          <div className="w-full h-full bg-gradient-to-b from-gray-700 to-gray-900 flex items-center justify-center">
-            <div className="text-center">
-              <div className="mx-auto mb-2 bg-white/10 rounded-full flex items-center justify-center w-8 h-8">
-                <div className="w-0 h-0 border-l-white border-t-transparent border-b-transparent ml-0.5 border-l-[8px] border-t-[4px] border-b-[4px]"></div>
-              </div>
-              <span className="text-white/60 font-bosenAlt text-xs">{title}</span>
-            </div>
-          </div>
-        )}
-        
-        {/* Play button overlay */}
-        {!isPlaying && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-            <div className="bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm w-12 h-12">
-              <div className="w-0 h-0 border-l-white border-t-transparent border-b-transparent ml-0.5 border-l-[12px] border-t-[8px] border-b-[8px] animate-bounce-triangle"></div>
-            </div>
-          </div>
-        )}
-        
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-500"></div>
-        
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleCinemaMode();
-          }}
-          className="absolute top-2 right-2 w-8 h-8 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-all duration-300 z-10 opacity-0 group-hover:opacity-100"
-        >
-          <Maximize2 size={12} className="text-white" />
-        </button>
-        
-        <div className="absolute bottom-2 left-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
-          <span className="text-white font-bosenAlt bg-black/50 px-2 py-1 rounded-full text-xs">
-            {title}
-          </span>
-        </div>
-      </div>
-    </>
-  );
-}
-
-function VerticalVideoPlayerWithSrc({ src, title }: { src: string; title: string }) {
-  const [isCinemaMode, setIsCinemaMode] = React.useState(false);
-  const [isPlaying, setIsPlaying] = React.useState(false);
-  const [showThumbnail, setShowThumbnail] = React.useState(true);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const handleVideoClick = () => {
-    if (isCinemaMode) return;
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-        setIsPlaying(false);
-        setShowThumbnail(true);
-      } else {
-        videoRef.current.play();
-        setIsPlaying(true);
-        setShowThumbnail(false);
-      }
-    }
-  };
-
-  const toggleCinemaMode = () => {
-    setIsCinemaMode(!isCinemaMode);
-  };
-
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      setIsCinemaMode(false);
-    }
-  };
-
-  return (
-    <>
-      {/* Cinema Mode Overlay */}
-      {isCinemaMode && (
-        <div 
-          className="fixed inset-0 z-[9999] bg-black/45 backdrop-blur-md transition-all duration-500 flex items-center justify-center"
-          onClick={handleOverlayClick}
-        >
-          <div 
-            className="relative w-[70vw] h-[70vh] rounded-2xl overflow-hidden shadow-2xl transition-all duration-500"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <video
-              ref={videoRef}
-              src={src}
-              autoPlay={false}
-              muted={false}
-              loop
-              playsInline
-              className="w-full h-full object-contain"
-              onLoadedData={() => {
-                if (videoRef.current) {
-                  videoRef.current.currentTime = 1;
-                }
-              }}
-            />
-            
-            {/* Cinema Mode Close Button */}
-            <button
-              onClick={() => setIsCinemaMode(false)}
-              className="absolute top-4 right-4 w-12 h-12 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-all duration-300 z-10"
-            >
-              <X size={20} className="text-white" />
-            </button>
-            
-            {/* Cinema Mode Title */}
-            <div className="absolute bottom-4 left-4">
-              <span className="text-white font-bosenAlt bg-black/50 px-3 py-1 rounded-full text-base">
-                {title}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* Original Video Container */}
-      <div 
-        ref={containerRef}
-        className="relative group cursor-pointer aspect-[9/16] rounded-lg overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105"
+        className={`relative group cursor-pointer aspect-video rounded-xl overflow-hidden shadow-lg transition-all duration-300 ${
+          isFullscreen 
+            ? 'fixed inset-0 z-[9999] !rounded-none !aspect-auto w-screen h-screen' 
+            : 'hover:shadow-xl hover:scale-105'
+        }`}
         onClick={handleVideoClick}
       >
         <video
@@ -488,10 +76,12 @@ function VerticalVideoPlayerWithSrc({ src, title }: { src: string; title: string
           muted={false}
           loop
           playsInline
-          className={`transition-all duration-500 w-full h-full object-cover ${showThumbnail ? 'opacity-0' : 'opacity-100'}`}
+          className={`w-full h-full object-contain transition-opacity duration-300 ${showThumbnail ? 'opacity-0' : 'opacity-100'} ${
+            isFullscreen ? 'object-contain' : 'object-cover'
+          }`}
           onLoadedData={() => {
             if (videoRef.current) {
-              videoRef.current.currentTime = 1;
+              videoRef.current.currentTime = 1; // Set thumbnail to 1 second
             }
           }}
         />
@@ -505,8 +95,8 @@ function VerticalVideoPlayerWithSrc({ src, title }: { src: string; title: string
                   const video = videoRef.current;
                   const ctx = canvas.getContext('2d');
                   if (ctx) {
-                    canvas.width = video.videoWidth || 1080;
-                    canvas.height = video.videoHeight || 1920;
+                    canvas.width = video.videoWidth || 1920;
+                    canvas.height = video.videoHeight || 1080;
                     
                     const drawThumbnail = () => {
                       if (video.readyState >= 2) {
@@ -523,119 +113,510 @@ function VerticalVideoPlayerWithSrc({ src, title }: { src: string; title: string
                   }
                 }
               }}
-              className="w-full h-full object-cover transition-all duration-500"
+              className={`w-full h-full ${isFullscreen ? 'object-contain' : 'object-cover'}`}
             />
           </div>
         )}
         
-        {/* Play button overlay */}
         {!isPlaying && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-            <div className="bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm w-12 h-12">
-              <div className="w-0 h-0 border-l-white border-t-transparent border-b-transparent ml-0.5 border-l-[12px] border-t-[8px] border-b-[8px] animate-bounce-triangle"></div>
+            <div className={`bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm ${
+              isFullscreen ? 'w-24 h-24' : 'w-16 h-16'
+            }`}>
+              <div className={`w-0 h-0 border-l-white border-t-transparent border-b-transparent ml-1 ${
+                isFullscreen 
+                  ? 'border-l-[30px] border-t-[18px] border-b-[18px]' 
+                  : 'border-l-[20px] border-t-[12px] border-b-[12px] animate-bounce-triangle'
+              }`}></div>
             </div>
           </div>
         )}
-        
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-500"></div>
-        
+        {!isFullscreen && (
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300" />
+        )}
         <button
           onClick={(e) => {
             e.stopPropagation();
-            toggleCinemaMode();
+            toggleFullscreen();
           }}
-          className="absolute top-2 right-2 w-8 h-8 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-all duration-300 z-10 opacity-0 group-hover:opacity-100"
+          className={`absolute bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-all duration-300 z-10 ${
+            isFullscreen 
+              ? 'top-8 right-8 w-12 h-12 opacity-100' 
+              : 'top-4 right-4 w-10 h-10 opacity-0 group-hover:opacity-100'
+          }`}
         >
-          <Maximize2 size={12} className="text-white" />
+          {isFullscreen ? (
+            <X size={20} className="text-white" />
+          ) : (
+            <Maximize2 size={16} className="text-white" />
+          )}
         </button>
-        
-        <div className="absolute bottom-2 left-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
-          <span className="text-white font-bosenAlt bg-black/50 px-2 py-1 rounded-full text-xs">
+        <div className={`absolute transition-all duration-300 ${
+          isFullscreen 
+            ? 'bottom-8 left-8 opacity-100' 
+            : 'bottom-4 left-4 opacity-0 group-hover:opacity-100'
+        }`}>
+          <span className={`text-white font-bosenAlt bg-black/50 px-3 py-1 rounded-full ${
+            isFullscreen ? 'text-lg' : 'text-sm'
+          }`}>
             {title}
           </span>
         </div>
       </div>
-    </>
+    );
+  }
+
+
+  // Placeholder for videos without src
+  return (
+    <div 
+      ref={containerRef}
+      className={`relative group cursor-pointer aspect-video rounded-xl overflow-hidden shadow-lg transition-all duration-300 ${
+        isFullscreen 
+          ? 'fixed inset-0 z-[9999] !rounded-none !aspect-auto w-screen h-screen' 
+          : 'hover:shadow-xl hover:scale-105'
+      }`}
+      onClick={handleVideoClick}
+    >
+      <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className={`mx-auto mb-3 bg-white/10 rounded-full flex items-center justify-center ${
+            isFullscreen ? 'w-24 h-24' : 'w-12 h-12'
+          }`}>
+            <div className={`w-0 h-0 border-l-white border-t-transparent border-b-transparent ml-1 ${
+              isFullscreen 
+                ? 'border-l-[20px] border-t-[12px] border-b-[12px]' 
+                : 'border-l-[10px] border-t-[6px] border-b-[6px]'
+            }`}></div>
+          </div>
+          <span className={`text-white/60 font-bosenAlt ${isFullscreen ? 'text-xl' : 'text-sm'}`}>{title}</span>
+        </div>
+      </div>
+      {!isFullscreen && (
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300"></div>
+      )}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          toggleFullscreen();
+        }}
+        className={`absolute bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-all duration-300 z-10 ${
+          isFullscreen 
+            ? 'top-8 right-8 w-12 h-12 opacity-100' 
+            : 'top-4 right-4 w-10 h-10 opacity-0 group-hover:opacity-100'
+        }`}
+      >
+        {isFullscreen ? (
+          <X size={20} className="text-white" />
+        ) : (
+          <Maximize2 size={16} className="text-white" />
+        )}
+      </button>
+    </div>
   );
 }
 
-function VerticalVideoPlayerPlaceholder({ title }: { title: string }) {
-  const [isCinemaMode, setIsCinemaMode] = React.useState(false);
+function VerticalVideoPlayer({ title }: { title: string }) {
+  const [isFullscreen, setIsFullscreen] = React.useState(false); 
+  const [isPlaying, setIsPlaying] = React.useState(false);
+  const [showThumbnail, setShowThumbnail] = React.useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const toggleCinemaMode = () => {
-    setIsCinemaMode(!isCinemaMode);
-  };
-
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      setIsCinemaMode(false);
+  const handleVideoClick = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+        setIsPlaying(false);
+        setShowThumbnail(true);
+      } else {
+        videoRef.current.play();
+        setIsPlaying(true);
+        setShowThumbnail(false);
+      }
     }
   };
 
+  const toggleFullscreen = () => {
+    if (!isFullscreen) {
+      if (containerRef.current?.requestFullscreen) {
+        containerRef.current.requestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
   return (
-    <>
-      {/* Cinema Mode Overlay */}
-      {isCinemaMode && (
-        <div 
-          className="fixed inset-0 z-[9999] bg-black/45 backdrop-blur-md transition-all duration-500 flex items-center justify-center"
-          onClick={handleOverlayClick}
-        >
-          <div 
-            className="relative w-[70vw] h-[70vh] rounded-2xl overflow-hidden shadow-2xl transition-all duration-500 bg-gradient-to-b from-gray-700 to-gray-900 flex items-center justify-center"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="text-center">
-              <div className="mx-auto mb-2 bg-white/10 rounded-full flex items-center justify-center w-16 h-16">
-                <div className="w-0 h-0 border-l-white border-t-transparent border-b-transparent ml-0.5 border-l-[16px] border-t-[8px] border-b-[8px]"></div>
-              </div>
-              <span className="text-white/60 font-bosenAlt text-lg">{title}</span>
+    <div 
+      ref={containerRef}
+      className={`relative group cursor-pointer aspect-[9/16] rounded-lg overflow-hidden shadow-lg transition-all duration-300 ${
+        isFullscreen 
+          ? 'fixed inset-0 z-[9999] !rounded-none !aspect-auto w-screen h-screen' 
+          : 'hover:shadow-xl hover:scale-105'
+      }`}
+      onClick={handleVideoClick}
+    >
+      {/* Video element (hidden initially) */}
+      <video
+        ref={videoRef}
+        autoPlay={false}
+        muted={false}
+        loop
+        playsInline
+        className={`w-full h-full transition-opacity duration-300 ${showThumbnail ? 'opacity-0' : 'opacity-100'} ${
+          isFullscreen ? 'object-contain' : 'object-cover'
+        }`}
+        onLoadedData={() => {
+          if (videoRef.current) {
+            videoRef.current.currentTime = 1; // Set thumbnail to 1 second
+          }
+        }}
+      />
+      
+      {/* Thumbnail overlay */}
+      {showThumbnail && (
+        <div className="absolute inset-0">
+          <canvas
+            ref={(canvas) => {
+              if (canvas && videoRef.current) {
+                const video = videoRef.current;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                  canvas.width = video.videoWidth || 1080;
+                  canvas.height = video.videoHeight || 1920;
+                  
+                  const drawThumbnail = () => {
+                    if (video.readyState >= 2) {
+                      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    }
+                  };
+                  
+                  video.addEventListener('loadeddata', drawThumbnail);
+                  video.addEventListener('seeked', drawThumbnail);
+                  
+                  if (video.readyState >= 2) {
+                    drawThumbnail();
+                  } 
+                }
+              }
+            }}
+            className={`w-full h-full ${isFullscreen ? 'object-contain' : 'object-cover'}`}
+          />
+        </div>
+      )}
+      
+      {/* Fallback placeholder when no video */}
+      {!videoRef.current?.src && (
+        <div className="w-full h-full bg-gradient-to-b from-gray-700 to-gray-900 flex items-center justify-center">
+          <div className="text-center">
+            <div className={`mx-auto mb-2 bg-white/10 rounded-full flex items-center justify-center ${
+              isFullscreen ? 'w-16 h-16' : 'w-8 h-8'
+            }`}>
+              <div className={`w-0 h-0 border-l-white border-t-transparent border-b-transparent ml-0.5 ${
+                isFullscreen 
+                  ? 'border-l-[16px] border-t-[8px] border-b-[8px]' 
+                  : 'border-l-[8px] border-t-[4px] border-b-[4px]'
+              }`}></div>
             </div>
-            
-            {/* Cinema Mode Close Button */}
-            <button
-              onClick={() => setIsCinemaMode(false)}
-              className="absolute top-4 right-4 w-12 h-12 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-all duration-300 z-10"
-            >
-              <X size={20} className="text-white" />
-            </button>
+            <span className={`text-white/60 font-bosenAlt ${isFullscreen ? 'text-lg' : 'text-xs'}`}>{title}</span>
           </div>
         </div>
       )}
       
-      {/* Original Video Container */}
-      <div 
-        ref={containerRef}
-        className="relative group cursor-pointer aspect-[9/16] rounded-lg overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105"
-      >
-        <div className="w-full h-full bg-gradient-to-b from-gray-700 to-gray-900 flex items-center justify-center">
-          <div className="text-center">
-            <div className="mx-auto mb-2 bg-white/10 rounded-full flex items-center justify-center w-8 h-8">
-              <div className="w-0 h-0 border-l-white border-t-transparent border-b-transparent ml-0.5 border-l-[8px] border-t-[4px] border-b-[4px]"></div>
-            </div>
-            <span className="text-white/60 font-bosenAlt text-xs">{title}</span>
+      {/* Play button overlay */}
+      {!isPlaying && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/30 ">
+          <div className={`bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm ${
+            isFullscreen ? 'w-20 h-20' : 'w-12 h-12'
+          }`}>
+            <div className={`w-0 h-0 border-l-white border-t-transparent border-b-transparent ml-0.5 ${
+              isFullscreen 
+                ? 'border-l-[24px] border-t-[14px] border-b-[14px]' 
+                : 'border-l-[12px] border-t-[8px] border-b-[8px] animate-bounce-triangle'
+            }`}></div>
           </div>
         </div>
-        
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-500"></div>
-        
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleCinemaMode();
-          }}
-          className="absolute top-2 right-2 w-8 h-8 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-all duration-300 z-10 opacity-0 group-hover:opacity-100"
-        >
+      )}
+      
+      {!isFullscreen && (
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300"></div>
+      )}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          toggleFullscreen();
+        }}
+        className={`absolute bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-all duration-300 z-10 ${
+          isFullscreen 
+            ? 'top-8 right-8 w-12 h-12 opacity-100' 
+            : 'top-2 right-2 w-8 h-8 opacity-0 group-hover:opacity-100'
+        }`}
+      >
+        {isFullscreen ? (
+          <X size={20} className="text-white" />
+        ) : (
           <Maximize2 size={12} className="text-white" />
-        </button>
-        
-        <div className="absolute bottom-2 left-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
-          <span className="text-white font-bosenAlt bg-black/50 px-2 py-1 rounded-full text-xs">
-            {title}
-          </span>
+        )}
+      </button>
+      <div className={`absolute transition-all duration-300 ${
+        isFullscreen 
+          ? 'bottom-8 left-8 opacity-100' 
+          : 'bottom-2 left-2 opacity-0 group-hover:opacity-100'
+      }`}>
+        <span className={`text-white font-bosenAlt bg-black/50 px-2 py-1 rounded-full ${
+          isFullscreen ? 'text-base' : 'text-xs'
+        }`}>
+          {title}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function VerticalVideoPlayerWithSrc({ src, title }: { src: string; title: string }) {
+  const [isFullscreen, setIsFullscreen] = React.useState(false); 
+  const [isPlaying, setIsPlaying] = React.useState(false);
+  const [showThumbnail, setShowThumbnail] = React.useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleVideoClick = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+        setIsPlaying(false);
+        setShowThumbnail(true);
+      } else {
+        videoRef.current.play();
+        setIsPlaying(true);
+        setShowThumbnail(false);
+      }
+    }
+  };
+
+  const toggleFullscreen = () => {
+    if (!isFullscreen) {
+      if (containerRef.current?.requestFullscreen) {
+        containerRef.current.requestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  return (
+    <div 
+      ref={containerRef}
+      className={`relative group cursor-pointer aspect-[9/16] rounded-lg overflow-hidden shadow-lg transition-all duration-300 ${
+        isFullscreen 
+          ? 'fixed inset-0 z-[9999] !rounded-none !aspect-auto w-screen h-screen' 
+          : 'hover:shadow-xl hover:scale-105'
+      }`}
+      onClick={handleVideoClick}
+    >
+      <video
+        ref={videoRef}
+        src={src}
+        autoPlay={false}
+        muted={false}
+        loop
+        playsInline
+        className={`w-full h-full transition-opacity duration-300 ${showThumbnail ? 'opacity-0' : 'opacity-100'} ${
+          isFullscreen ? 'object-contain' : 'object-cover'
+        }`}
+        onLoadedData={() => {
+          if (videoRef.current) {
+            videoRef.current.currentTime = 1; // Set thumbnail to 1 second
+          }
+        }}
+      />
+      
+      {/* Thumbnail overlay */}
+      {showThumbnail && (
+        <div className="absolute inset-0">
+          <canvas
+            ref={(canvas) => {
+              if (canvas && videoRef.current) {
+                const video = videoRef.current;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                  canvas.width = video.videoWidth || 1080;
+                  canvas.height = video.videoHeight || 1920;
+                  
+                  const drawThumbnail = () => {
+                    if (video.readyState >= 2) {
+                      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    }
+                  };
+                  
+                  video.addEventListener('loadeddata', drawThumbnail);
+                  video.addEventListener('seeked', drawThumbnail);
+                  
+                  if (video.readyState >= 2) {
+                    drawThumbnail();
+                  }
+                }
+              }
+            }}
+            className={`w-full h-full ${isFullscreen ? 'object-contain' : 'object-cover'}`}
+          />
+        </div>
+      )}
+      
+      {/* Play button overlay */}
+      {!isPlaying && ( 
+        <div className="absolute inset-0 flex items-center justify-center bg-black/30 ">
+          <div className={`bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm ${
+            isFullscreen ? 'w-20 h-20' : 'w-12 h-12'
+          }`}>
+            <div className={`w-0 h-0 border-l-white border-t-transparent border-b-transparent ml-0.5 ${
+              isFullscreen 
+                ? 'border-l-[24px] border-t-[14px] border-b-[14px]' 
+                : 'border-l-[12px] border-t-[8px] border-b-[8px] animate-bounce-triangle'
+            }`}></div>
+          </div>
+          </div>
+      
+      )}
+      
+      {!isFullscreen && (
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300"></div>
+      )}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          toggleFullscreen();
+        }}
+        className={`absolute bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-all duration-300 z-10 ${
+          isFullscreen 
+            ? 'top-8 right-8 w-12 h-12 opacity-100' 
+            : 'top-2 right-2 w-8 h-8 opacity-0 group-hover:opacity-100'
+        }`}
+      >
+        {isFullscreen ? (
+          <X size={20} className="text-white" />
+        ) : (
+          <Maximize2 size={12} className="text-white" />
+        )}
+      </button>
+      <div className={`absolute transition-all duration-300 ${
+        isFullscreen 
+          ? 'bottom-8 left-8 opacity-100' 
+          : 'bottom-2 left-2 opacity-0 group-hover:opacity-100'
+      }`}>
+        <span className={`text-white font-bosenAlt bg-black/50 px-2 py-1 rounded-full ${
+          isFullscreen ? 'text-base' : 'text-xs'
+        }`}>
+          {title}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function VerticalVideoPlayerPlaceholder({ title }: { title: string }) {
+  const [isFullscreen, setIsFullscreen] = React.useState(false); 
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const toggleFullscreen = () => {
+    if (!isFullscreen) {
+      if (containerRef.current?.requestFullscreen) {
+        containerRef.current.requestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  return (
+    <div 
+      ref={containerRef}
+      className={`relative group cursor-pointer aspect-[9/16] rounded-lg overflow-hidden shadow-lg transition-all duration-300 ${
+        isFullscreen 
+          ? 'fixed inset-0 z-[9999] !rounded-none !aspect-auto w-screen h-screen' 
+          : 'hover:shadow-xl hover:scale-105'
+      }`}
+    >
+      <div className="w-full h-full bg-gradient-to-b from-gray-700 to-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className={`mx-auto mb-2 bg-white/10 rounded-full flex items-center justify-center ${
+            isFullscreen ? 'w-16 h-16' : 'w-8 h-8'
+          }`}>
+            <div className={`w-0 h-0 border-l-white border-t-transparent border-b-transparent ml-0.5 ${
+              isFullscreen 
+                ? 'border-l-[16px] border-t-[8px] border-b-[8px]' 
+                : 'border-l-[8px] border-t-[4px] border-b-[4px]'
+            }`}></div>
+          </div>
+          <span className={`text-white/60 font-bosenAlt ${isFullscreen ? 'text-lg' : 'text-xs'}`}>{title}</span>
         </div>
       </div>
-    </>
+      {!isFullscreen && (
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300"></div>
+      )}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          toggleFullscreen();
+        }}
+        className={`absolute bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-all duration-300 z-10 ${
+          isFullscreen 
+            ? 'top-8 right-8 w-12 h-12 opacity-100' 
+            : 'top-2 right-2 w-8 h-8 opacity-0 group-hover:opacity-100'
+        }`}
+      >
+        {isFullscreen ? (
+          <X size={20} className="text-white" />
+        ) : (
+          <Maximize2 size={12} className="text-white" />
+        )}
+      </button>
+      <div className={`absolute transition-all duration-300 ${
+        isFullscreen 
+          ? 'bottom-8 left-8 opacity-100' 
+          : 'bottom-2 left-2 opacity-0 group-hover:opacity-100'
+      }`}>
+        <span className={`text-white font-bosenAlt bg-black/50 px-2 py-1 rounded-full ${
+          isFullscreen ? 'text-base' : 'text-xs'
+        }`}>
+          {title}
+        </span>
+      </div>
+    </div>
   );
 }
 
