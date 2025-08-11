@@ -288,7 +288,7 @@ function VerticalVideoPlayer({ title }: { title: string }) {
     >
       {/* Fullscreen backdrop with blur and overlay */}
       {isFullscreen && (
-        <div className="absolute inset-0 bg-black/45 backdrop-blur-md transition-all duration-500" />
+        <div className="absolute inset-0 bg-black/5 backdrop-blur-md transition-all duration-500" />
       )}
       
       {/* Video element (hidden initially) */}
